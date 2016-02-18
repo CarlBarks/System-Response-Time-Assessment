@@ -2,6 +2,7 @@ package com.example.stef.response_time_assesment;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
@@ -64,12 +65,7 @@ public class FirstScreenFragment extends Fragment {
         show_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
 
-                SystemClock.sleep(myList[counter]);//Tine delay
-
-                mytextView.setText(R.string.oath);
-
-                rg.setVisibility(getView().VISIBLE);
-                rg.setClickable(true);
+                new showTextTask().execute();
                 // evaluate_button.setClickable(true);
                 //evaluate_button.setVisibility(getView().VISIBLE);
             }
@@ -80,83 +76,23 @@ public class FirstScreenFragment extends Fragment {
         badbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    rg.setVisibility(getView().INVISIBLE);
-                    rg.setClickable(false);
-                    mytextView.setText("");
-                    badbutton.setChecked(false);
-                    checked = "Bad";
-                    WriteToFile();
-                    counter++;
-                    if (counter>=10) {
-                        Context context = getActivity().getApplicationContext();
-                        CharSequence text = "10 Trials Completed! Restarting!";
-                        int duration = Toast.LENGTH_LONG;
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        counter=0;
-                        shuffleArray(myList);
-                    }
+                new handleEvaluationTask().execute("Bad");
             }
         });
 
         mediocrebutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    rg.setVisibility(getView().INVISIBLE);
-                    rg.setClickable(false);
-                    mytextView.setText("");
-                    mediocrebutton.setChecked(false);
-                    checked = "Mediocre";
-                    WriteToFile();
-                    counter++;
-                    if (counter>=10) {
-                        Context context = getActivity().getApplicationContext();
-                        CharSequence text = "10 Trials Completed! Restarting!";
-                        int duration = Toast.LENGTH_LONG;
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        counter=0;
-                        shuffleArray(myList);
-                    }
+                new handleEvaluationTask().execute("Mediocre");
             }
         });
 
         goodbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    rg.setVisibility(getView().INVISIBLE);
-                    rg.setClickable(false);
-                    mytextView.setText("");
-                    goodbutton.setChecked(false);
-                    checked = "Good";
-                    WriteToFile();
-                    counter++;
-                    if (counter>=10) {
-                        Context context = getActivity().getApplicationContext();
-                        CharSequence text = "10 Trials Completed! Restarting!";
-                        int duration = Toast.LENGTH_LONG;
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.setGravity(Gravity.CENTER, 0, 0);
-                        toast.show();
-                        counter=0;
-                        shuffleArray(myList);
-                    }
+                new handleEvaluationTask().execute("Good");
             }
         });
-
-        /*//Initialise button and add listener
-        final Button evaluate_button = (Button)getView().findViewById(R.id.evaluate_button);
-        evaluate_button.setClickable(false);
-        evaluate_button.setVisibility(getView().INVISIBLE);*/
-
-        /*evaluate_button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                FirstScreenFragment.this.showDialog("evaluate");
-            }
-        });*/
-
     }
 
     /*method for shuffling our int[] array*/
@@ -171,6 +107,87 @@ public class FirstScreenFragment extends Fragment {
             int a = ar[index];
             ar[index] = ar[i];
             ar[i] = a;
+        }
+    }
+
+    /*AsyncTask responsible for handling the UI changes and writing data to .txt
+     *when radio Buttons are pressed      */
+    private class handleEvaluationTask extends AsyncTask<String, Void, Integer> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        @Override
+        protected Integer doInBackground(String... params) {
+            checked = params[0];
+            WriteToFile();
+            counter++;
+            if (counter>=10) {
+                shuffleArray(myList);
+            }
+            return 1;
+        }
+
+        /** The system calls this to perform work in the UI thread **/
+        protected void onPostExecute(Integer i) {
+            if (checked.equals("Bad")){
+                final RadioButton badbutton = (RadioButton) getView().findViewById(R.id.radioBad);
+                badbutton.setChecked(false);
+
+            }else if (checked.equals("Mediocre")){
+                final RadioButton mediocrebutton = (RadioButton) getView().findViewById(R.id.radioMediocre);
+                mediocrebutton.setChecked(false);
+
+            }else if(checked.equals("Good")){
+                final RadioButton goodbutton = (RadioButton) getView().findViewById(R.id.radioGood);
+                goodbutton.setChecked(false);
+            }
+
+            final TextView mytextView = (TextView)getView().findViewById(R.id.mytextView);
+            mytextView.setText(R.string.oath);
+
+            final RadioGroup rg = (RadioGroup) getView().findViewById(R.id.radioEvaluate);
+            rg.setVisibility(getView().VISIBLE);
+            rg.setClickable(true);
+
+            final Button show_button = (Button)getView().findViewById(R.id.show_button);
+            show_button.setClickable(true);
+
+            rg.setVisibility(getView().INVISIBLE);
+            rg.setClickable(false);
+            mytextView.setText("");
+            if (counter>=10) {
+                Context context = getActivity().getApplicationContext();
+                CharSequence text = "10 Trials Completed! Restarting!";
+                int duration = Toast.LENGTH_LONG;
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                counter=0;
+            }
+        }
+    }
+
+    /*AsyncTask responsible for handling the UI changes
+     *when the 'Show Text' Button is pressed      */
+    private class showTextTask extends AsyncTask<Void, Void, Integer> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        @Override
+        protected Integer doInBackground(Void... params) {
+            SystemClock.sleep(myList[counter]);//Time delay
+            return 1;
+        }
+
+        /** The system calls this to perform work in the UI thread **/
+        protected void onPostExecute(Integer i) {
+            final TextView mytextView = (TextView)getView().findViewById(R.id.mytextView);
+            mytextView.setText(R.string.oath);
+
+            final RadioGroup rg = (RadioGroup) getView().findViewById(R.id.radioEvaluate);
+            rg.setVisibility(getView().VISIBLE);
+            rg.setClickable(true);
+
+            final Button show_button = (Button)getView().findViewById(R.id.show_button);
+            show_button.setClickable(false);
         }
     }
 
@@ -216,15 +233,5 @@ public class FirstScreenFragment extends Fragment {
 
         }
     }
-
-    /*private void showDialog(String flag) {
-        Bundle bundle = new Bundle();
-        bundle.putString("flag", flag);
-        EvaluateDialogFragment frag = new EvaluateDialogFragment();
-        FragmentManager fm = this.getChildFragmentManager();
-        frag.setArguments(bundle);
-        frag.setTargetFragment(this, 0);
-        frag.show(fm, "evaluate_dialog");
-    }*/
 
 }
